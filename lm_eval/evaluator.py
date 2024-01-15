@@ -23,21 +23,21 @@ from lm_eval.utils import (
 
 @positional_deprecated
 def simple_evaluate(
-    model,
-    model_args=None,
-    tasks=[],
-    num_fewshot=None,
-    batch_size=None,
-    max_batch_size=None,
-    device=None,
-    use_cache=None,
-    limit=None,
-    bootstrap_iters: int = 100000,
-    check_integrity: bool = False,
-    decontamination_ngrams_path=None,
-    write_out: bool = False,
-    log_samples: bool = True,
-    gen_kwargs: str = None,
+        model,
+        model_args=None,
+        tasks=[],
+        num_fewshot=None,
+        batch_size=None,
+        max_batch_size=None,
+        device=None,
+        use_cache=None,
+        limit=None,
+        bootstrap_iters: int = 100000,
+        check_integrity: bool = False,
+        decontamination_ngrams_path=None,
+        write_out: bool = False,
+        log_samples: bool = True,
+        gen_kwargs: str = None,
 ):
     """Instantiate and evaluate a model on a list of tasks.
 
@@ -81,7 +81,7 @@ def simple_evaluate(
     )  # TODO: this may affect training runs that are run with evaluation mid-run.
 
     assert (
-        tasks != []
+            tasks != []
     ), "No tasks specified, or no tasks found. Please verify the task names."
 
     if gen_kwargs is not None:
@@ -185,13 +185,13 @@ decontaminate_suffix = "_decontaminate"
 
 @positional_deprecated
 def evaluate(
-    lm,
-    task_dict,
-    limit=None,
-    bootstrap_iters: int = 100000,
-    decontamination_ngrams_path=None,
-    write_out: bool = False,
-    log_samples: bool = True,
+        lm,
+        task_dict,
+        limit=None,
+        bootstrap_iters: int = 100000,
+        decontamination_ngrams_path=None,
+        write_out: bool = False,
+        log_samples: bool = True,
 ):
     """Instantiate and evaluate a model on a list of tasks.
 
@@ -262,9 +262,9 @@ def evaluate(
             results[task_name]["alias"] = configs[task_name]["task_alias"]
 
         if (
-            ("group_alias" in configs[task_name])
-            and (group_name not in results)
-            and (group_name is not None)
+                ("group_alias" in configs[task_name])
+                and (group_name not in results)
+                and (group_name is not None)
         ):
             results[group_name]["alias"] = configs[task_name]["group_alias"]
 
@@ -492,26 +492,26 @@ def evaluate(
                         ]:
                             stderr = "_stderr,".join(metric.split(","))
                             stderr_score = results[task][stderr]
-                            var_score = stderr_score**2
+                            var_score = stderr_score ** 2
                             metric_score = results[task][metric]
 
                             all_stderr.append(stderr)
 
                             if metric in results[group]:
                                 results[group][metric] = (
-                                    results[group][metric] * total_size
-                                    + metric_score * current_size
-                                ) / (total_size + current_size)
+                                                                 results[group][metric] * total_size
+                                                                 + metric_score * current_size
+                                                         ) / (total_size + current_size)
                                 # $$s_z^2 = \frac{(n-1) s_x^2 + (m-1) s_y^2}{n+m-1} + \frac{nm(\bar x - \bar y)^2}{(n+m)(n+m-1)}.$$
                                 results[group][stderr] = (
-                                    (total_size - 1) * results[group][stderr]
-                                    + (current_size - 1) * var_score
-                                ) / (
-                                    total_size + current_size - 1
-                                ) + total_size * current_size / (
-                                    (total_size + current_size)
-                                    * (total_size + current_size - 1)
-                                ) * (results[group][metric] - metric_score) ** 2
+                                                                 (total_size - 1) * results[group][stderr]
+                                                                 + (current_size - 1) * var_score
+                                                         ) / (
+                                                                 total_size + current_size - 1
+                                                         ) + total_size * current_size / (
+                                                                 (total_size + current_size)
+                                                                 * (total_size + current_size - 1)
+                                                         ) * (results[group][metric] - metric_score) ** 2
                             else:
                                 results[group][metric] = metric_score
                                 results[group][stderr] = var_score
@@ -539,7 +539,7 @@ def evaluate(
 
             if "alias" in results_agg[group_name]:
                 results_agg[group_name]["alias"] = (
-                    tab_string + results_agg[group_name]["alias"]
+                        tab_string + results_agg[group_name]["alias"]
                 )
             else:
                 results_agg[group_name]["alias"] = tab_string + group_name
@@ -552,7 +552,7 @@ def evaluate(
 
                 if "alias" in groups_agg[group_name]:
                     groups_agg[group_name]["alias"] = (
-                        tab_string + groups_agg[group_name]["alias"]
+                            tab_string + groups_agg[group_name]["alias"]
                     )
                 else:
                     groups_agg[group_name]["alias"] = tab_string + group_name

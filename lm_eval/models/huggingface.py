@@ -791,10 +791,16 @@ class HFLM(LM):
             # @gsoykan - do preprocessing based on task
             if getattr(self, '_additional_modality_preprocessor', None) is not None:
                 req = requests[i]
+                # TODO: @gsoykan - decisions below can be discussed
                 if 'xnli' in req.task_name:
-                    # TODO: @gsoykan - this can be discussed
                     premise = req.doc['premise']
                     modality_input = self._additional_modality_preprocessor(prompt=premise)
+                elif 'xcopa' in req.task_name:
+                    # for tr f"{premise} bu yüzden"
+                    modality_input = self._additional_modality_preprocessor(prompt=context)
+                elif 'xstorycloze' in req.task_name:
+                    # {' '.join(input_sentences)}
+                    modality_input = self._additional_modality_preprocessor(prompt=context)
                 else:
                     raise ValueError(f'task => {req.task_name}, '
                                      f'is not supported by modality preprocessor')

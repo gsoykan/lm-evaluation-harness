@@ -58,11 +58,16 @@ class AdditionalModalityPreprocessor:
         self.additional_modality_processor_alias = additional_modality_processor_alias
         if self.additional_modality_processor_alias == 'small_lm_xlmr':
             self.small_lm_tokenizer = AutoTokenizer.from_pretrained("xlm-roberta-base")
+        elif self.additional_modality_processor_alias == "small_lm_sbert_distiluse-base-multilingual-cased-v2":
+            model_name = "sentence-transformers/distiluse-base-multilingual-cased-v2"
+            self.small_lm_tokenizer = AutoTokenizer.from_pretrained(model_name)
         else:
             raise ValueError(f'unknown alias => {additional_modality_processor_alias}')
 
     def __call__(self, *args, **kwargs) -> Dict:
-        if self.additional_modality_processor_alias == 'small_lm_xlmr':
+        if self.additional_modality_processor_alias in ['small_lm_xlmr',
+                                                        "small_lm_sbert_distiluse-base-multilingual-cased-v2"
+                                                        ]:
             small_lm_input = {f'small_lm_{k}': v for (k, v) in
                               self.small_lm_tokenizer(
                                   kwargs['prompt'],

@@ -64,6 +64,9 @@ class AdditionalModalityPreprocessor:
         elif self.additional_modality_processor_alias == "small_lm_berturk":
             model_name = "dbmdz/bert-base-turkish-cased"
             self.small_lm_tokenizer = AutoTokenizer.from_pretrained(model_name)
+        elif self.additional_modality_processor_alias == "fasttext_sentence":
+            ft = AdditionalModalityPreprocessor._load_fasttext_model()
+            self.sentence2vec = lambda x: ft.get_sentence_vector(' '.join(x.splitlines()))
         else:
             raise ValueError(f'unknown alias => {additional_modality_processor_alias}')
 
@@ -78,6 +81,23 @@ class AdditionalModalityPreprocessor:
                                   truncation=True,
                               ).items()}
             return small_lm_input
+        elif self.additional_modality_processor_alias in ["fasttext_sentence"]:
+            vec = self.sentence2vec(kwargs['prompt'])
+            return {"modality_input": vec}
+        else:
+            raise NotImplementedError(f"Unknown additional modality => {self.additional_modality_processor_alias}")
+
+    @staticmethod
+    def _load_fasttext_model():
+        import fasttext
+
+        # model should be available at the dir before loading...
+        ft_model_dir = os.environ.get("FASTTEXT_MODEL_DIR")
+        global_lang = os.environ.get('GLOBAL_LANG_CODE')
+        ft_model_name = "cc.%s.300.bin" % global_lang
+        ft_model_path = os.path.join(ft_model_dir, ft_model_name)
+        ft = fasttext.load_model(ft_model_path)
+        return ft
 
 
 @register_model("hf-auto", "hf", "huggingface")
@@ -968,8 +988,12 @@ class HFLM(LM):
                 if len(modality_inputs) == 1:
                     modality_input = modality_inputs[0]
                     for k, v in modality_input.items():
-                        modality_inputs_collector[k] = modality_inputs_collector[k] + [
-                            torch.tensor(v, dtype=torch.long, device=self.device)]
+                        if k == 'modality_input':
+                            modality_inputs_collector[k] = modality_inputs_collector[k] + [
+                                torch.tensor(v, device=self.device)]
+                        else:
+                            modality_inputs_collector[k] = modality_inputs_collector[k] + [
+                                torch.tensor(v, dtype=torch.long, device=self.device)]
                 # how this all works (illustrated on a causal decoder-only setup):
                 #          CTX      CONT
                 # inp    0 1 2 3|4 5 6 7 8 9   <- last token is deleted by inp[:, :-1]

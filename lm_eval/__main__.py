@@ -30,15 +30,21 @@ def parse_eval_args() -> argparse.Namespace:
     parser.add_argument(
         "--tasks",
         "-t",
-        default=None,
+        default='xstorycloze_en',
         metavar="task1,task2",
         help="To get full list of tasks, use the command lm-eval --tasks list",
     )
     parser.add_argument(
         "--model_args",
         "-a",
-        default="",
+        default="pretrained=ai-forever/mGPT,peft=/home/gsoykan/Desktop/dev/multilingual-adapters/src/instruction_tuning/output/mGPT-X-adaption-lang",
         help="Comma separated string arguments for model, e.g. `pretrained=EleutherAI/pythia-160m,dtype=float32`",
+    )
+    # to get small_lm inputs from tokenizer...
+    parser.add_argument(
+        "--additional_modality_processor_alias",
+        default="fasttext_sentence",
+        help="additional modality input type for model, e.g. `small_lm_xlmr`, `typology-lang-embedding`, `random_embedding",
     )
     parser.add_argument(
         "--num_fewshot",
@@ -52,7 +58,7 @@ def parse_eval_args() -> argparse.Namespace:
         "--batch_size",
         "-b",
         type=str,
-        default=1,
+        default=4,
         metavar="auto|auto:N|N",
         help="Acceptable values are 'auto', 'auto:N' or N, where N is an integer. Default 1.",
     )
@@ -66,7 +72,7 @@ def parse_eval_args() -> argparse.Namespace:
     parser.add_argument(
         "--device",
         type=str,
-        default=None,
+        default='cuda:0',
         help="Device to use (e.g. cuda, cuda:0, cpu).",
     )
     parser.add_argument(
@@ -84,7 +90,7 @@ def parse_eval_args() -> argparse.Namespace:
         default=None,
         metavar="N|0<N<1",
         help="Limit the number of examples per task. "
-        "If <1, limit is a percentage of the total number of examples.",
+             "If <1, limit is a percentage of the total number of examples.",
     )
     parser.add_argument(
         "--use_cache",
@@ -150,6 +156,10 @@ def cli_evaluate(args: Union[argparse.Namespace, None] = None) -> None:
     if not args:
         # we allow for args to be passed externally, else we parse them ourselves
         args = parse_eval_args()
+
+    if args.additional_modality_processor_alias is not None \
+            or args.additional_modality_processor_alias != '':
+        args.model_args += f',additional_modality_processor_alias={args.additional_modality_processor_alias}'
 
     eval_logger = utils.eval_logger
     eval_logger.setLevel(getattr(logging, f"{args.verbosity}"))

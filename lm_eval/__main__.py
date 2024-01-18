@@ -43,7 +43,7 @@ def parse_eval_args() -> argparse.Namespace:
     # to get small_lm inputs from tokenizer...
     parser.add_argument(
         "--additional_modality_processor_alias",
-        default="fasttext_sentence",
+        default=None,
         help="additional modality input type for model, e.g. `small_lm_xlmr`, `typology-lang-embedding`, `random_embedding",
     )
     parser.add_argument(

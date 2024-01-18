@@ -68,7 +68,7 @@ class AdditionalModalityPreprocessor:
             ft = AdditionalModalityPreprocessor._load_fasttext_model()
             self.sentence2vec = lambda x: ft.get_sentence_vector(' '.join(x.splitlines()))
         else:
-            raise ValueError(f'unknown alias => {additional_modality_processor_alias}')
+            raise ValueError(f'unknown alias => {self.additional_modality_processor_alias}')
 
     def __call__(self, *args, **kwargs) -> Dict:
         if self.additional_modality_processor_alias in ['small_lm_xlmr',

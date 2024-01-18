@@ -527,7 +527,8 @@ class HFLM(LM):
             additional_modality_processor_alias = (model_kwargs
                                                    .pop('additional_modality_processor_alias', None))
 
-            if additional_modality_processor_alias is not None or additional_modality_processor_alias != 'None':
+            if (additional_modality_processor_alias is not None and
+                    additional_modality_processor_alias != 'None'):
                 self._additional_modality_preprocessor = AdditionalModalityPreprocessor(
                     additional_modality_processor_alias)
 

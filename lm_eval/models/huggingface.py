@@ -64,6 +64,9 @@ class AdditionalModalityPreprocessor:
         elif self.additional_modality_processor_alias == "small_lm_berturk":
             model_name = "dbmdz/bert-base-turkish-cased"
             self.small_lm_tokenizer = AutoTokenizer.from_pretrained(model_name)
+        elif self.additional_modality_processor_alias == "small_lm_labse":
+            model_name = "setu4993/LaBSE"
+            self.small_lm_tokenizer = AutoTokenizer.from_pretrained(model_name)
         elif self.additional_modality_processor_alias == "fasttext_sentence":
             ft = AdditionalModalityPreprocessor._load_fasttext_model()
             self.sentence2vec = lambda x: ft.get_sentence_vector(' '.join(x.splitlines()))
@@ -73,7 +76,8 @@ class AdditionalModalityPreprocessor:
     def __call__(self, *args, **kwargs) -> Dict:
         if self.additional_modality_processor_alias in ['small_lm_xlmr',
                                                         "small_lm_sbert_distiluse-base-multilingual-cased-v2",
-                                                        "small_lm_berturk"]:
+                                                        "small_lm_berturk",
+                                                        "small_lm_labse"]:
             small_lm_input = {f'small_lm_{k}': v for (k, v) in
                               self.small_lm_tokenizer(
                                   kwargs['prompt'],

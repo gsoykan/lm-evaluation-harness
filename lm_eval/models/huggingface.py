@@ -70,6 +70,9 @@ class AdditionalModalityPreprocessor:
         elif self.additional_modality_processor_alias == "small_lm_lealla_large":
             model_name = "setu4993/LEALLA-large"
             self.small_lm_tokenizer = AutoTokenizer.from_pretrained(model_name)
+        elif self.additional_modality_processor_alias == "small_lm_e5_base":
+            model_name = "intfloat/multilingual-e5-base"
+            self.small_lm_tokenizer = AutoTokenizer.from_pretrained(model_name)
         elif self.additional_modality_processor_alias == "fasttext_sentence":
             ft = AdditionalModalityPreprocessor._load_fasttext_model()
             self.sentence2vec = lambda x: ft.get_sentence_vector(' '.join(x.splitlines()))
@@ -77,20 +80,24 @@ class AdditionalModalityPreprocessor:
             raise ValueError(f'unknown alias => {self.additional_modality_processor_alias}')
 
     def __call__(self, *args, **kwargs) -> Dict:
+        input_text = kwargs['prompt']
         if self.additional_modality_processor_alias in ['small_lm_xlmr',
                                                         "small_lm_sbert_distiluse-base-multilingual-cased-v2",
                                                         "small_lm_berturk",
                                                         "small_lm_labse",
-                                                        "small_lm_lealla_large"]:
+                                                        "small_lm_lealla_large",
+                                                        "small_lm_e5_base"]:
+            if self.additional_modality_processor_alias == "small_lm_e5_base":
+                input_text = f'query: {input_text}'
             small_lm_input = {f'small_lm_{k}': v for (k, v) in
                               self.small_lm_tokenizer(
-                                  kwargs['prompt'],
+                                  input_text,
                                   padding="max_length",
                                   truncation=True,
                               ).items()}
             return small_lm_input
         elif self.additional_modality_processor_alias in ["fasttext_sentence"]:
-            vec = self.sentence2vec(kwargs['prompt'])
+            vec = self.sentence2vec(input_text)
             return {"modality_input": vec}
         else:
             raise NotImplementedError(f"Unknown additional modality => {self.additional_modality_processor_alias}")

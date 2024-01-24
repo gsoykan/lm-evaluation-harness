@@ -4,6 +4,7 @@ from collections import defaultdict
 from pathlib import Path
 from typing import List, Literal, Optional, Tuple, Union, Dict
 
+import numpy as np
 import torch
 import torch.nn.functional as F
 import transformers
@@ -22,7 +23,7 @@ from lm_eval import utils
 from lm_eval.api.instance import Instance
 from lm_eval.api.model import LM
 from lm_eval.api.registry import register_model
-from lm_eval.utils import Collator, stop_sequences_criteria
+from lm_eval.utils import Collator, stop_sequences_criteria, get_typological_language_features
 
 eval_logger = utils.eval_logger
 
@@ -76,17 +77,20 @@ class AdditionalModalityPreprocessor:
         elif self.additional_modality_processor_alias == "fasttext_sentence":
             ft = AdditionalModalityPreprocessor._load_fasttext_model()
             self.sentence2vec = lambda x: ft.get_sentence_vector(' '.join(x.splitlines()))
+        elif self.additional_modality_processor_alias == 'typology-lang-embedding':
+            self.cache = {}
+            print('using typology-lang-embedding')
         else:
             raise ValueError(f'unknown alias => {self.additional_modality_processor_alias}')
 
     def __call__(self, *args, **kwargs) -> Dict:
-        input_text = kwargs['prompt']
         if self.additional_modality_processor_alias in ['small_lm_xlmr',
                                                         "small_lm_sbert_distiluse-base-multilingual-cased-v2",
                                                         "small_lm_berturk",
                                                         "small_lm_labse",
                                                         "small_lm_lealla_large",
                                                         "small_lm_e5_base"]:
+            input_text = kwargs['prompt']
             if self.additional_modality_processor_alias == "small_lm_e5_base":
                 input_text = f'query: {input_text}'
             small_lm_input = {f'small_lm_{k}': v for (k, v) in
@@ -97,8 +101,18 @@ class AdditionalModalityPreprocessor:
                               ).items()}
             return small_lm_input
         elif self.additional_modality_processor_alias in ["fasttext_sentence"]:
+            input_text = kwargs['prompt']
             vec = self.sentence2vec(input_text)
             return {"modality_input": vec}
+        elif self.additional_modality_processor_alias == "typology-lang-embedding":
+            input_lang = kwargs['lang']
+            if self.cache.get(input_lang, None) is None:
+                lang_features_dict = get_typological_language_features([input_lang])
+                lang_vector: np.ndarray = lang_features_dict[input_lang]
+                self.cache[input_lang] = lang_vector
+            else:
+                lang_vector = self.cache[input_lang]
+            return {"modality_input": lang_vector, "dtype": torch.float32}
         else:
             raise NotImplementedError(f"Unknown additional modality => {self.additional_modality_processor_alias}")
 
@@ -835,17 +849,18 @@ class HFLM(LM):
             # @gsoykan - do preprocessing based on task
             if getattr(self, '_additional_modality_preprocessor', None) is not None:
                 req = requests[i]
+                lang = req.task_name.split('_')[-1]
                 if 'xnli' in req.task_name:
                     xnli_context = req.args[1].removesuffix(req.doc['hypothesis'])
                     # 'premise + doğru? evet'
-                    modality_input = self._additional_modality_preprocessor(prompt=xnli_context)
+                    modality_input = self._additional_modality_preprocessor(prompt=xnli_context, lang=lang)
                 elif 'xcopa' in req.task_name:
                     # for tr f"{premise} bu yüzden"
-                    modality_input = self._additional_modality_preprocessor(prompt=context)
+                    modality_input = self._additional_modality_preprocessor(prompt=context, lang=lang)
                 elif 'xstorycloze' in req.task_name:
                     # TODO: @gsoykan - there are no prompts for xstorycloze? should there be one? For now
                     #   let's use it like this...
-                    modality_input = self._additional_modality_preprocessor(prompt=context)
+                    modality_input = self._additional_modality_preprocessor(prompt=context, lang=lang)
                 else:
                     raise ValueError(f'task => {req.task_name}, '
                                      f'is not supported by modality preprocessor')
@@ -1003,11 +1018,12 @@ class HFLM(LM):
                 assert len(modality_inputs) < 2
 
                 if len(modality_inputs) == 1:
-                    modality_input = modality_inputs[0]
+                    modality_input: Dict = modality_inputs[0]
+                    modality_input_dtype = modality_input.pop('dtype', None)
                     for k, v in modality_input.items():
                         if k == 'modality_input':
                             modality_inputs_collector[k] = modality_inputs_collector[k] + [
-                                torch.tensor(v, device=self.device)]
+                                torch.tensor(v, dtype=modality_input_dtype, device=self.device)]
                         else:
                             modality_inputs_collector[k] = modality_inputs_collector[k] + [
                                 torch.tensor(v, dtype=torch.long, device=self.device)]

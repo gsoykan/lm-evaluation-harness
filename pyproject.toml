@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "lm_eval"
 version = "0.4.0"
 authors = [
-    {name="EleutherAI", email="contact@eleuther.ai"}
+    { name = "EleutherAI", email = "contact@eleuther.ai" }
 ]
 description = "A framework for evaluating language models"
 readme = "README.md"
@@ -36,6 +36,7 @@ dependencies = [
     "tqdm-multiprocess",
     "transformers>=4.1",
     "zstandard",
+    "lang2vec==1.1.6"
 ]
 
 [tool.setuptools.packages.find]
@@ -97,5 +98,5 @@ lines-after-imports = 2
 known-first-party = ["lm_eval"]
 
 [tool.ruff.extend-per-file-ignores]
-"__init__.py" = ["F401","F402","F403","I"]
-"lm_eval/tasks/*"= ["E721"]
+"__init__.py" = ["F401", "F402", "F403", "I"]
+"lm_eval/tasks/*" = ["E721"]

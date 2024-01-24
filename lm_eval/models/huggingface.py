@@ -23,7 +23,7 @@ from lm_eval import utils
 from lm_eval.api.instance import Instance
 from lm_eval.api.model import LM
 from lm_eval.api.registry import register_model
-from lm_eval.utils import Collator, stop_sequences_criteria, get_typological_language_features
+from lm_eval.utils import Collator, stop_sequences_criteria, get_typological_language_features, iso2lang
 
 eval_logger = utils.eval_logger
 
@@ -80,6 +80,8 @@ class AdditionalModalityPreprocessor:
         elif self.additional_modality_processor_alias == 'typology-lang-embedding':
             self.cache = {}
             print('using typology-lang-embedding')
+        elif self.additional_modality_processor_alias == 'random_embedding':
+            print('using fine-tuned random-lang-embedding by lang-index')
         else:
             raise ValueError(f'unknown alias => {self.additional_modality_processor_alias}')
 
@@ -113,6 +115,11 @@ class AdditionalModalityPreprocessor:
             else:
                 lang_vector = self.cache[input_lang]
             return {"modality_input": lang_vector, "dtype": torch.float32}
+        elif self.additional_modality_processor_alias == "random_embedding":
+            input_lang = kwargs['lang']
+            sorted_langs = sorted(iso2lang.keys())
+            lang_vector: np.ndarray = np.asarray([sorted_langs.index(input_lang)])
+            return {"modality_input": lang_vector, "dtype": torch.long}
         else:
             raise NotImplementedError(f"Unknown additional modality => {self.additional_modality_processor_alias}")
 

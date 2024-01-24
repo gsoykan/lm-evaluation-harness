@@ -945,7 +945,10 @@ def get_typological_language_features(lang_list: List[str],
     # or
     # ImportError("cannot import name 'get_features'
     # from 'lang2vec' (/home/gsoykan/anaconda3/envs/lit-gpt/lib/python3.10/site-packages/lang2vec/__init__.py)")
-    from lang2vec.lang2vec import LETTER_CODES, get_features
+    try:
+        from lang2vec.lang2vec import LETTER_CODES, get_features
+    except ModuleNotFoundError:
+        from lang2vec import LETTER_CODES, get_features
 
     features = dict()
     for lang in lang_list:

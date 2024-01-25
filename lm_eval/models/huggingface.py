@@ -55,73 +55,85 @@ def _get_accelerate_args(
 
 class AdditionalModalityPreprocessor:
     def __init__(self,
-                 additional_modality_processor_alias: str):
+                 additional_modality_processor_alias: str,
+                 additional_modality_processor_complementary_alias: str):
         self.additional_modality_processor_alias = additional_modality_processor_alias
-        if self.additional_modality_processor_alias == 'small_lm_xlmr':
-            self.small_lm_tokenizer = AutoTokenizer.from_pretrained("xlm-roberta-base")
-        elif self.additional_modality_processor_alias == "small_lm_sbert_distiluse-base-multilingual-cased-v2":
-            model_name = "sentence-transformers/distiluse-base-multilingual-cased-v2"
-            self.small_lm_tokenizer = AutoTokenizer.from_pretrained(model_name)
-        elif self.additional_modality_processor_alias == "small_lm_berturk":
-            model_name = "dbmdz/bert-base-turkish-cased"
-            self.small_lm_tokenizer = AutoTokenizer.from_pretrained(model_name)
-        elif self.additional_modality_processor_alias == "small_lm_labse":
-            model_name = "setu4993/LaBSE"
-            self.small_lm_tokenizer = AutoTokenizer.from_pretrained(model_name)
-        elif self.additional_modality_processor_alias == "small_lm_lealla_large":
-            model_name = "setu4993/LEALLA-large"
-            self.small_lm_tokenizer = AutoTokenizer.from_pretrained(model_name)
-        elif self.additional_modality_processor_alias == "small_lm_e5_base":
-            model_name = "intfloat/multilingual-e5-base"
-            self.small_lm_tokenizer = AutoTokenizer.from_pretrained(model_name)
-        elif self.additional_modality_processor_alias == "fasttext_sentence":
-            ft = AdditionalModalityPreprocessor._load_fasttext_model()
-            self.sentence2vec = lambda x: ft.get_sentence_vector(' '.join(x.splitlines()))
-        elif self.additional_modality_processor_alias == 'typology-lang-embedding':
+        self.additional_modality_processor_complementary_alias = additional_modality_processor_complementary_alias
+        aliases = [additional_modality_processor_alias, additional_modality_processor_complementary_alias]
+
+        # handle lang priors
+        if 'typology-lang-embedding' in aliases:
             self.cache = {}
             print('using typology-lang-embedding')
-        elif self.additional_modality_processor_alias == 'random_embedding':
+        elif 'random_embedding' in aliases:
             print('using fine-tuned random-lang-embedding by lang-index')
-        else:
-            raise ValueError(f'unknown alias => {self.additional_modality_processor_alias}')
+
+        # handle semantic priors
+        if 'small_lm_xlmr' in aliases:
+            self.small_lm_tokenizer = AutoTokenizer.from_pretrained("xlm-roberta-base")
+        elif "small_lm_sbert_distiluse-base-multilingual-cased-v2" in aliases:
+            model_name = "sentence-transformers/distiluse-base-multilingual-cased-v2"
+            self.small_lm_tokenizer = AutoTokenizer.from_pretrained(model_name)
+        elif "small_lm_berturk" in aliases:
+            model_name = "dbmdz/bert-base-turkish-cased"
+            self.small_lm_tokenizer = AutoTokenizer.from_pretrained(model_name)
+        elif "small_lm_labse" in aliases:
+            model_name = "setu4993/LaBSE"
+            self.small_lm_tokenizer = AutoTokenizer.from_pretrained(model_name)
+        elif "small_lm_lealla_large" in aliases:
+            model_name = "setu4993/LEALLA-large"
+            self.small_lm_tokenizer = AutoTokenizer.from_pretrained(model_name)
+        elif "small_lm_e5_base" in aliases:
+            model_name = "intfloat/multilingual-e5-base"
+            self.small_lm_tokenizer = AutoTokenizer.from_pretrained(model_name)
+        elif "fasttext_sentence" in aliases:
+            ft = AdditionalModalityPreprocessor._load_fasttext_model()
+            self.sentence2vec = lambda x: ft.get_sentence_vector(' '.join(x.splitlines()))
 
     def __call__(self, *args, **kwargs) -> Dict:
-        if self.additional_modality_processor_alias in ['small_lm_xlmr',
-                                                        "small_lm_sbert_distiluse-base-multilingual-cased-v2",
-                                                        "small_lm_berturk",
-                                                        "small_lm_labse",
-                                                        "small_lm_lealla_large",
-                                                        "small_lm_e5_base"]:
-            input_text = kwargs['prompt']
-            if self.additional_modality_processor_alias == "small_lm_e5_base":
-                input_text = f'query: {input_text}'
-            small_lm_input = {f'small_lm_{k}': v for (k, v) in
-                              self.small_lm_tokenizer(
-                                  input_text,
-                                  padding="max_length",
-                                  truncation=True,
-                              ).items()}
-            return small_lm_input
-        elif self.additional_modality_processor_alias in ["fasttext_sentence"]:
-            input_text = kwargs['prompt']
-            vec = self.sentence2vec(input_text)
-            return {"modality_input": vec}
-        elif self.additional_modality_processor_alias == "typology-lang-embedding":
-            input_lang = kwargs['lang']
-            if self.cache.get(input_lang, None) is None:
-                lang_features_dict = get_typological_language_features([input_lang])
-                lang_vector: np.ndarray = lang_features_dict[input_lang]
-                self.cache[input_lang] = lang_vector
+        output = {}
+
+        for alias in [self.additional_modality_processor_alias,
+                      self.additional_modality_processor_complementary_alias]:
+
+            if alias in ['small_lm_xlmr',
+                         "small_lm_sbert_distiluse-base-multilingual-cased-v2",
+                         "small_lm_berturk",
+                         "small_lm_labse",
+                         "small_lm_lealla_large",
+                         "small_lm_e5_base"]:
+                input_text = kwargs['prompt']
+                if alias == "small_lm_e5_base":
+                    input_text = f'query: {input_text}'
+                small_lm_input = {f'small_lm_{k}': v for (k, v) in
+                                  self.small_lm_tokenizer(
+                                      input_text,
+                                      padding="max_length",
+                                      truncation=True,
+                                  ).items()}
+                output.update(small_lm_input)
+            elif alias in ["fasttext_sentence"]:
+                input_text = kwargs['prompt']
+                vec = self.sentence2vec(input_text)
+                output.update({"modality_input": vec})
+            elif alias == "typology-lang-embedding":
+                input_lang = kwargs['lang']
+                if self.cache.get(input_lang, None) is None:
+                    lang_features_dict = get_typological_language_features([input_lang])
+                    lang_vector: np.ndarray = lang_features_dict[input_lang]
+                    self.cache[input_lang] = lang_vector
+                else:
+                    lang_vector = self.cache[input_lang]
+                output.update({"modality_input": lang_vector, "dtype": torch.float32})
+            elif alias == "random_embedding":
+                input_lang = kwargs['lang']
+                sorted_langs = sorted(iso2lang.keys())
+                lang_vector: np.ndarray = np.asarray([sorted_langs.index(input_lang)])
+                output.update({"modality_input": lang_vector, "dtype": torch.long})
             else:
-                lang_vector = self.cache[input_lang]
-            return {"modality_input": lang_vector, "dtype": torch.float32}
-        elif self.additional_modality_processor_alias == "random_embedding":
-            input_lang = kwargs['lang']
-            sorted_langs = sorted(iso2lang.keys())
-            lang_vector: np.ndarray = np.asarray([sorted_langs.index(input_lang)])
-            return {"modality_input": lang_vector, "dtype": torch.long}
-        else:
-            raise NotImplementedError(f"Unknown additional modality => {self.additional_modality_processor_alias}")
+                raise NotImplementedError(f"Unknown additional modality => {self.additional_modality_processor_alias}")
+
+        return output
 
     @staticmethod
     def _load_fasttext_model():
@@ -565,8 +577,11 @@ class HFLM(LM):
 
             if (additional_modality_processor_alias is not None and
                     additional_modality_processor_alias != 'None'):
+                aliases = additional_modality_processor_alias.split('+')
+                complementary_alias = aliases[1] if len(aliases) > 1 else None
                 self._additional_modality_preprocessor = AdditionalModalityPreprocessor(
-                    additional_modality_processor_alias)
+                    aliases[0],
+                    complementary_alias)
 
             self._model = self.AUTO_MODEL_CLASS.from_pretrained(
                 pretrained,

@@ -56,10 +56,14 @@ def _get_accelerate_args(
 class AdditionalModalityPreprocessor:
     def __init__(self,
                  additional_modality_processor_alias: str,
-                 additional_modality_processor_complementary_alias: str):
+                 additional_modality_processor_complementary_alias: Optional[str]):
         self.additional_modality_processor_alias = additional_modality_processor_alias
         self.additional_modality_processor_complementary_alias = additional_modality_processor_complementary_alias
-        aliases = [additional_modality_processor_alias, additional_modality_processor_complementary_alias]
+        aliases = [additional_modality_processor_alias,
+                   additional_modality_processor_complementary_alias] \
+            if additional_modality_processor_complementary_alias is not None else [
+            additional_modality_processor_alias]
+        self.aliases = aliases
 
         # handle lang priors
         if 'typology-lang-embedding' in aliases:
@@ -93,8 +97,7 @@ class AdditionalModalityPreprocessor:
     def __call__(self, *args, **kwargs) -> Dict:
         output = {}
 
-        for alias in [self.additional_modality_processor_alias,
-                      self.additional_modality_processor_complementary_alias]:
+        for alias in self.aliases:
 
             if alias in ['small_lm_xlmr',
                          "small_lm_sbert_distiluse-base-multilingual-cased-v2",

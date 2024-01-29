@@ -30,20 +30,22 @@ def parse_eval_args() -> argparse.Namespace:
     parser.add_argument(
         "--tasks",
         "-t",
-        default='xstorycloze_en',
+        default='xwinograd_en',
         metavar="task1,task2",
         help="To get full list of tasks, use the command lm-eval --tasks list",
     )
     parser.add_argument(
         "--model_args",
         "-a",
-        default="pretrained=ai-forever/mGPT,peft=/home/gsoykan/Desktop/dev/multilingual-adapters/src/instruction_tuning/output/mGPT-X-adaption-lang",
+        # default="pretrained=ai-forever/mGPT,peft=/home/gsoykan/Desktop/dev/multilingual-adapters/src/instruction_tuning/output/mGPT-X-adaption-lang",
+        default="pretrained=bigscience/bloomz-560m,peft=/home/gsoykan/Desktop/dev/multilingual-adapters/src/instruction_tuning/output/bloomz-560m-X-adaption-lang",
         help="Comma separated string arguments for model, e.g. `pretrained=EleutherAI/pythia-160m,dtype=float32`",
     )
     # to get small_lm inputs from tokenizer...
     parser.add_argument(
         "--additional_modality_processor_alias",
-        default=None,
+        default="typology-lang-embedding+small_lm_lealla_large",
+        # "typology-lang-embedding+small_lm_lealla_large",  # typology-lang-embedding+small_lm_lealla_large
         help="additional modality input type for model, e.g. `small_lm_xlmr`, `typology-lang-embedding`, `random_embedding",
     )
     parser.add_argument(

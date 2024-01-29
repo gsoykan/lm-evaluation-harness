@@ -878,6 +878,8 @@ class HFLM(LM):
                 if 'xnli' in req.task_name:
                     xnli_context = req.args[1].removesuffix(req.doc['hypothesis'])
                     # 'premise + doğru? evet'
+                    # TODO: @gsoykan - 'premise + doğru?' should be the context, small_lm should not see the answer
+                    xnli_context = '?'.join(xnli_context.split('?')[:-1]) + '?'
                     modality_input = self._additional_modality_preprocessor(prompt=xnli_context, lang=lang)
                 elif 'xcopa' in req.task_name:
                     # for tr f"{premise} bu yüzden"
@@ -885,6 +887,13 @@ class HFLM(LM):
                 elif 'xstorycloze' in req.task_name:
                     # TODO: @gsoykan - there are no prompts for xstorycloze? should there be one? For now
                     #   let's use it like this...
+                    modality_input = self._additional_modality_preprocessor(prompt=context, lang=lang)
+                elif 'paws' in req.task_name:
+                    # prompt format => "" + sentence1 + ", right? " + mask + ", "  + sentence2 + "",
+                    paws_context = req.args[1].removesuffix(req.doc['sentence2'])
+                    paws_context = '?'.join(paws_context.split('?')[:-1]) + '?'
+                    modality_input = self._additional_modality_preprocessor(prompt=paws_context, lang=lang)
+                elif 'xwinograd' in req.task_name:
                     modality_input = self._additional_modality_preprocessor(prompt=context, lang=lang)
                 else:
                     raise ValueError(f'task => {req.task_name}, '

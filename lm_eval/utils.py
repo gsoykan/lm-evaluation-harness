@@ -952,7 +952,15 @@ def get_typological_language_features(lang_list: List[str],
 
     features = dict()
     for lang in lang_list:
-        feat = get_features(LETTER_CODES[lang], language_features)[LETTER_CODES[lang]]
+        try:
+            letter_code = LETTER_CODES[lang]
+        except KeyError as e:
+            if lang == 'jp':
+                letter_code = LETTER_CODES['ja']
+            else:
+                raise e
+
+        feat = get_features(letter_code, language_features)[letter_code]
         features[lang] = np.asarray(feat)
     return features
 
